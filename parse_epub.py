@@ -54,4 +54,5 @@ def write_pages_to_json(pages, filepath):
 if __name__ == '__main__':
     text = get_text_from_epub('dune.epub')
     pages = make_pages_from_text(text, 1000)
-    write_pages_to_json(pages, 'dune.json')
+    write_pages_to_json(pages, 'pages.json')
+    print('Made {} pages, from {} characters.'.format(len(pages), len(text)))
