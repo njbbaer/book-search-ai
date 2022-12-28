@@ -1,3 +1,4 @@
 .vscode/
 *.epub
 *.json
+__pycache__/
