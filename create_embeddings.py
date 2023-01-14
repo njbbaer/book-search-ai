@@ -6,46 +6,8 @@ from ebooklib import epub
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
+from text_parser import EpubParser
 from src.util import create_embedding
-
-
-def read_epub_text(filepath):
-    book = epub.read_epub(filepath, {'ignore_ncx': True})
-    items = book.get_items_of_type(ebooklib.ITEM_DOCUMENT)
-    text = get_text_from_items(items)
-    return text
-
-
-def make_pages_from_text(text, page_size):
-    paragraphs = text.split('\n')
-    paragraphs = filter(None, paragraphs)
-    pages = combine_paragraphs(paragraphs, page_size)
-    return pages
-
-
-def get_text_from_items(items):
-    text_items = map(get_text_from_item, items)
-    return ' '.join(text_items)
-
-
-def get_text_from_item(item):
-    content = item.get_content()
-    soup = BeautifulSoup(content, 'html.parser')
-    text = soup.get_text()
-    return text
-
-
-def combine_paragraphs(paragraphs, max_chars_per_page):
-    pages = []
-    current_page = ""
-    for paragraph in paragraphs:
-        if len(current_page) + len(paragraph) > max_chars_per_page:
-            pages.append(current_page.strip())
-            current_page = paragraph
-        else:
-            current_page += ' ' + paragraph
-    pages.append(current_page)
-    return pages
 
 
 def create_embeddings_for_pages(pages):
@@ -72,6 +34,14 @@ def write_embeddings_json(content, filepath):
         json.dump(content, file, indent=2, ensure_ascii=False)
 
 
+def print_stats(pages):
+    text = ''.join(pages)
+    num_chars = len(text)
+    num_pages = len(pages)
+    cost = num_chars / 4 / 1000 * 0.0004
+    print('Embedding {} characters, as {} pages, for ~${:0.2f}.'.format(num_chars, num_pages, cost))
+
+
 def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('epub_filepath',
@@ -85,14 +55,12 @@ def parse_arguments(args):
 
 
 def create_embeddings(args):
-    text = read_epub_text(args.epub_filepath)
-    pages = make_pages_from_text(text, args.max_chars_per_page)
-    cost = len(text) / 4 / 1000 * 0.0004
-    print('Embedding {} characters, as {} pages, for ~${:0.2f}.'.format(len(text), len(pages), cost))
+    epub_parser = EpubParser(args.epub_filepath)
+    pages = epub_parser.get_pages(args.max_chars_per_page)
+    print_stats(pages)
     embeddings = create_embeddings_for_pages(pages)
     pages_with_embeddings = format_pages_with_embeddings(pages, embeddings)
     write_embeddings_json(pages_with_embeddings, args.embeddings_filepath)
-
 
 if __name__ == '__main__':
     args = parse_arguments(sys.argv[1:])
