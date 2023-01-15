@@ -5,10 +5,10 @@ import re
 
 
 class TextParser:
-    def __init__(self, text: str):
+    def __init__(self, text):
         self.text = text
 
-    def get_pages(self, max_chars_per_page: int):
+    def get_pages(self, max_chars_per_page):
         paragraphs = self._get_paragraphs()
         return self._combine_paragraphs(paragraphs, max_chars_per_page)
 
@@ -30,7 +30,7 @@ class TextParser:
 
 
 class EpubParser(TextParser):
-    def __init__(self, filepath: str):
+    def __init__(self, filepath):
         self.text = self._read_file(filepath)
         super().__init__(self.text)
 
